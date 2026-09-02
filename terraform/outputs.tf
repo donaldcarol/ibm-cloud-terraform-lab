@@ -46,3 +46,9 @@ output "ssh_key_id" {
 output "vm1_floating_ip" {
   value = ibm_is_floating_ip.lab1.address
 }
+
+output "monitoring_instance_guid" {
+  description = "GUID required by the IBM Cloud Monitoring API"
+  value       = ibm_resource_instance.monitoring.guid
+}
+
