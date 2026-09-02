@@ -14,6 +14,8 @@ The project demonstrates infrastructure as code, remote state management in IBM 
 - Validate and plan infrastructure changes through GitHub Actions.
 - Keep credentials, local variables and Terraform state outside the repository.
 - Demonstrate Terraform drift detection and recovery.
+- Save Terraform plans as short-lived GitHub Actions artifacts.
+- Require manual approval before applying the exact reviewed plan.
 
 ## Architecture
 
@@ -223,6 +225,66 @@ It also acquired and released the remote state lock correctly.
 
 The current workflows do not execute `terraform apply` and cannot modify the infrastructure.
 
+### Terraform Deploy
+
+File:
+
+```text
+.github/workflows/terraform-deploy.yml
+```
+
+This manually triggered workflow implements a controlled Terraform deployment process with two dependent jobs:
+
+```text
+Plan
+→ Save binary tfplan
+→ Upload short-lived artifact
+→ Wait for ibm-lab approval
+→ Download the approved plan
+→ Apply the exact saved plan
+```
+
+The `plan` job:
+
+1. checks out the repository;
+2. installs the configured Terraform version;
+3. creates the temporary SSH public-key file;
+4. initializes the IBM COS remote backend;
+5. verifies formatting and validates the configuration;
+6. creates a binary plan with `terraform plan -out=tfplan`;
+7. uploads the plan as the `ibm-terraform-plan` artifact.
+
+The plan artifact is retained for one day because saved Terraform plans may contain infrastructure data and potentially sensitive values.
+
+The `apply` job depends on the successful completion of the `plan` job:
+
+```yaml
+needs: plan
+```
+
+It references the protected GitHub Environment:
+
+```yaml
+environment:
+  name: ibm-lab
+```
+
+The environment requires manual approval from an authorized reviewer and restricts deployments to the `main` branch.
+
+After approval, the job creates a fresh runner environment, initializes Terraform, downloads the plan artifact and executes:
+
+```text
+terraform apply -input=false tfplan
+```
+
+Terraform does not generate a new plan after approval. It applies exactly the binary plan produced by the preceding job.
+
+The complete workflow was tested successfully with a no-change deployment:
+
+```text
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+```
+
 ## Repository structure
 
 ```text
@@ -230,7 +292,8 @@ ibm-cloud-terraform-lab/
 ├── .github/
 │   └── workflows/
 │       ├── terraform-plan.yml
-│       └── terraform-validate.yml
+│       ├── terraform-validate.yml
+|       └── terraform-deploy.yml
 ├── terraform/
 │   ├── .terraform.lock.hcl
 │   ├── backend.tf
