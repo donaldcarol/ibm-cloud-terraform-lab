@@ -6,7 +6,7 @@ data "ibm_resource_group" "lab" {
 resource "ibm_is_vpc" "lab" {
   name           = var.vpc_name
   resource_group = data.ibm_resource_group.lab.id
-
+  tags           = ["managed-by:terraform"]
 }
 
 resource "ibm_is_subnet" "lab1" {
