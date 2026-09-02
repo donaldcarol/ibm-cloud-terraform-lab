@@ -442,7 +442,9 @@ The project has been tested for:
 - transfer of the saved plan between separate GitHub-hosted runners;
 - verification of the downloaded `tfplan` file;
 - application of the exact approved Terraform plan;
-- successful no-change deployment through the protected workflow.
+- successful no-change deployment through the protected workflow;
+- protected in-place VPC tag update through the deployment workflow;
+- post-deployment verification returning no infrastructure drift.
 
 ## Possible improvements
 
