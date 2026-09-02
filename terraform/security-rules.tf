@@ -8,27 +8,18 @@ resource "ibm_is_security_group_rule" "outbound_all" {
 }
 
 
-resource "ibm_is_security_group_rule" "ping_from_subnet1" {
+resource "ibm_is_security_group_rule" "ping_from_anywhere" {
   group      = ibm_is_security_group.lab.id
   direction  = "inbound"
   ip_version = "ipv4"
   protocol   = "icmp"
-  remote     = var.subnet1_cidr
+  remote     = "0.0.0.0/0"
   type       = 8
   code       = 0
 
 }
 
-resource "ibm_is_security_group_rule" "ping_from_subnet2" {
-  group      = ibm_is_security_group.lab.id
-  direction  = "inbound"
-  ip_version = "ipv4"
-  protocol   = "icmp"
-  remote     = var.subnet2_cidr
-  type       = 8
-  code       = 0
 
-}
 
 resource "ibm_is_security_group_rule" "ssh_from_admin" {
   group      = ibm_is_security_group.lab.id
@@ -51,3 +42,5 @@ resource "ibm_is_security_group_rule" "ssh_from_subnet1" {
   port_max   = 22
 
 }
+
+
