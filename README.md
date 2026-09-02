@@ -223,7 +223,6 @@ No changes. Your infrastructure matches the configuration.
 
 It also acquired and released the remote state lock correctly.
 
-The current workflows do not execute `terraform apply` and cannot modify the infrastructure.
 
 ### Terraform Deploy
 
@@ -413,7 +412,12 @@ Review the complete plan before performing any infrastructure-changing operation
 - The IBM provider uses a dedicated Service ID.
 - Administrative SSH access is restricted through `admin_cidr`.
 - Only one VM receives a Floating IP.
-- The GitHub Actions workflows currently perform validation and planning only.
+- Infrastructure deployment is performed only through a manually triggered workflow.
+- The `apply` job is protected by the `ibm-lab` GitHub Environment.
+- Deployment is restricted to the `main` branch.
+- An authorized reviewer must approve the deployment before the `apply` job starts.
+- Terraform applies the exact saved plan rather than generating a new plan after approval.
+- Saved Terraform plan artifacts are retained for only one day.
 - `.terraform.lock.hcl` is committed to ensure reproducible provider selection.
 
 ## Tested scenarios
@@ -432,14 +436,18 @@ The project has been tested for:
 - GitHub Actions validation without backend access;
 - authenticated GitHub Actions planning against remote state;
 - temporary SSH public-key injection on the GitHub runner.
+- creation of a binary Terraform plan in GitHub Actions;
+- publication of the saved plan as a short-lived workflow artifact;
+- manual deployment approval through the `ibm-lab` GitHub Environment;
+- transfer of the saved plan between separate GitHub-hosted runners;
+- verification of the downloaded `tfplan` file;
+- application of the exact approved Terraform plan;
+- successful no-change deployment through the protected workflow.
 
 ## Possible improvements
 
 Future versions may add:
 
-- saved Terraform plan artifacts;
-- a protected `terraform apply` workflow;
-- GitHub Environment approval before deployment;
 - separate development and production environments;
 - reusable Terraform modules;
 - IBM Cloud monitoring, logging and alerts;
@@ -451,10 +459,22 @@ Future versions may add:
 
 ## Current status
 
-The infrastructure, remote state and GitHub Actions plan workflow are operational.
+## Current status
 
-The most recent authenticated plan completed successfully with:
+The IBM Cloud infrastructure, COS remote state, state locking and GitHub Actions workflows are operational.
+
+The repository currently provides:
+
+- static Terraform validation without backend access;
+- authenticated planning against IBM Cloud and the COS remote state;
+- saved binary plan artifacts;
+- protected deployment through the `ibm-lab` GitHub Environment;
+- manual approval before applying infrastructure changes;
+- application of the exact approved Terraform plan.
+
+The latest authenticated deployment completed successfully with:
 
 ```text
 No changes. Your infrastructure matches the configuration.
-```
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
