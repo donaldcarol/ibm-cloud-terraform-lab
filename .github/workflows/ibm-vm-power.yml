@@ -54,7 +54,7 @@ jobs:
             -r "$IBM_REGION" \
             -g "$IBM_RESOURCE_GROUP"
 
-            - name: Perform action on virtual machine
+      - name: Perform action on virtual machine
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
