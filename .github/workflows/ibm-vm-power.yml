@@ -20,6 +20,9 @@ on:
           - vm-ibm-lab-1
           - vm-ibm-lab-2
 
+  schedule:
+    - cron: "0 20 * * *"
+  
 permissions: {}
 
 env:
@@ -51,32 +54,57 @@ jobs:
             -r "$IBM_REGION" \
             -g "$IBM_RESOURCE_GROUP"
 
-      - name: Perform action on virtual machine
+            - name: Perform action on virtual machine
         shell: bash
         env:
-          ACTION: ${{ inputs.action }}
-          VM_NAME: ${{ inputs.vmName }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_ACTION: ${{ inputs.action }}
+          INPUT_VM_NAME: ${{ inputs.vmName }}
         run: |
           set -euo pipefail
 
-          case "$ACTION" in
-            start)
-              echo "Starting VM: $VM_NAME"
-              ibmcloud is instance-start "$VM_NAME"
-              ;;
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            action="stop"
+            vm_names=("vm-ibm-lab-1" "vm-ibm-lab-2")
+          else
+            action="$INPUT_ACTION"
+            vm_names=("$INPUT_VM_NAME")
+          fi
 
-            stop)
-              echo "Stopping VM: $VM_NAME"
-              ibmcloud is instance-stop "$VM_NAME" --force
-              ;;
+          for vm_name in "${vm_names[@]}"; do
+            current_status="$(
+              ibmcloud is instance "$vm_name" --output JSON |
+                jq -r '.status'
+            )"
 
-            status)
-              echo "Getting status of VM: $VM_NAME"
-              ibmcloud is instance "$VM_NAME"
-              ;;
+            echo "VM: $vm_name"
+            echo "Current status: $current_status"
+            echo "Requested action: $action"
 
-            *)
-              echo "::error::Invalid action: $ACTION"
-              exit 1
-              ;;
-          esac
+            case "$action" in
+              start)
+                if [[ "$current_status" == "stopped" ]]; then
+                  ibmcloud is instance-start "$vm_name"
+                else
+                  echo "No action required: VM is $current_status"
+                fi
+                ;;
+
+              stop)
+                if [[ "$current_status" == "running" ]]; then
+                  ibmcloud is instance-stop "$vm_name" --force
+                else
+                  echo "No action required: VM is $current_status"
+                fi
+                ;;
+
+              status)
+                echo "$vm_name is $current_status"
+                ;;
+
+              *)
+                echo "::error::Invalid action: $action"
+                exit 1
+                ;;
+            esac
+          done
