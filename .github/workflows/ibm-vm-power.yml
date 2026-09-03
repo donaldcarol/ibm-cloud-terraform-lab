@@ -1,0 +1,82 @@
+name: IBM VM Power
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Action to perform"
+        required: true
+        type: choice
+        options:
+          - start
+          - stop
+          - status
+
+      vmName:
+        description: "Virtual machine name"
+        required: true
+        type: choice
+        options:
+          - vm-ibm-lab-1
+          - vm-ibm-lab-2
+
+permissions: {}
+
+env:
+  IC_API_KEY: ${{ secrets.IC_API_KEY }}
+  IBM_REGION: eu-de
+  IBM_RESOURCE_GROUP: rg-ibm-lab
+
+jobs:
+  ibm-vm-power:
+    name: IBM VM Power
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install IBM Cloud CLI
+        shell: bash
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+
+      - name: Install VPC infrastructure plugin
+        shell: bash
+        run: |
+          ibmcloud plugin install vpc-infrastructure -f
+
+      - name: Login to IBM Cloud
+        shell: bash
+        run: |
+          ibmcloud login \
+            --apikey "$IC_API_KEY" \
+            -r "$IBM_REGION" \
+            -g "$IBM_RESOURCE_GROUP"
+
+      - name: Perform action on virtual machine
+        shell: bash
+        env:
+          ACTION: ${{ inputs.action }}
+          VM_NAME: ${{ inputs.vmName }}
+        run: |
+          set -euo pipefail
+
+          case "$ACTION" in
+            start)
+              echo "Starting VM: $VM_NAME"
+              ibmcloud is instance-start "$VM_NAME"
+              ;;
+
+            stop)
+              echo "Stopping VM: $VM_NAME"
+              ibmcloud is instance-stop "$VM_NAME" --force
+              ;;
+
+            status)
+              echo "Getting status of VM: $VM_NAME"
+              ibmcloud is instance "$VM_NAME"
+              ;;
+
+            *)
+              echo "::error::Invalid action: $ACTION"
+              exit 1
+              ;;
+          esac

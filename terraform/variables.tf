@@ -62,7 +62,7 @@ variable "security_group_name" {
 variable "admin_cidr" {
   description = "IBM Admin CIDR block"
   type        = string
-  default     = "79.127.181.87/32"
+  default     = "188.24.123.179/32"
 }
 
 variable "ssh_key_name" {
