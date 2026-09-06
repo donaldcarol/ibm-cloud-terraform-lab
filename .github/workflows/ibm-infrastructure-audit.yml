@@ -65,12 +65,26 @@ jobs:
           echo "Listing security groups..."
           ibmcloud is security-groups --vpc vpc-ibm-lab
 
-      - name: Inspect lab security group
+      - name: Audit SSH rules
         shell: bash
         run: |
           set -euo pipefail
-          echo "Inspecting sg-ibm-lab..."
-          ibmcloud is security-group sg-ibm-lab --output JSON |
-            jq '.rules'
-          
-      
+
+          echo "Inspecting SSH rules in sg-ibm-lab..."
+
+          sg_json="$(
+          ibmcloud is security-group sg-ibm-lab --output JSON
+          )"
+
+          echo "$sg_json" |
+          jq -r '
+          .rules[]
+          | select(
+            .direction == "inbound"
+            and .protocol == "tcp"
+            and .port_min <= 22
+            and .port_max >= 22
+          )
+          | [.name, .remote.cidr_block, .port_min, .port_max]
+          | @tsv
+          '
