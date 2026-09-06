@@ -1,0 +1,42 @@
+name: IBM Infrastructure Audit
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  IC_API_KEY: ${{ secrets.IC_API_KEY }}
+  IBM_REGION: eu-de
+  IBM_RESOURCE_GROUP: rg-ibm-lab
+
+jobs:
+  ibm-infrastructure-audit:
+    name: IBM Infrastructure Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install IBM Cloud CLI
+        shell: bash
+        run: |
+          curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+
+      - name: Install VPC infrastructure plugin
+        shell: bash
+        run: |
+          ibmcloud plugin install vpc-infrastructure -f
+
+      - name: Login to IBM Cloud
+        shell: bash
+        run: |
+          ibmcloud login \
+            --apikey "$IC_API_KEY" \
+            -r "$IBM_REGION" \
+            -g "$IBM_RESOURCE_GROUP"
+
+      - name: Perform infrastructure audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Performing infrastructure audit..."
+          ibmcloud is instances
