@@ -10,6 +10,7 @@ env:
   IBM_REGION: eu-de
   IBM_RESOURCE_GROUP: rg-ibm-lab
   IBM_ADMIN_CIDR: ${{ vars.IBM_ADMIN_CIDR }}
+  IBM_SECURITY_GROUP: sg-ibm-lab
 
 jobs:
   ibm-infrastructure-audit:
@@ -89,15 +90,50 @@ jobs:
           | [.name, .remote.cidr_block, .port_min, .port_max]
           | @tsv
           '
-          echo "Security groups attached to each VM:"
+           association_failed=0
 
+          {
+            echo
+            echo "### Security Group Associations"
+            echo
+            echo "| VM | Expected Security Group | Result |"
+            echo "|---|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          
           for vm_name in vm-ibm-lab-1 vm-ibm-lab-2; do
-          echo
-          echo "VM: $vm_name"
+          vm_json="$(
+            ibmcloud is instance "$vm_name" --output JSON
+          )"
         
-           ibmcloud is instance "$vm_name" --output JSON |
-            jq '.primary_network_interface.security_groups'
-            done
+          if echo "$vm_json" |
+            jq -e \
+              --arg expected_sg "$IBM_SECURITY_GROUP" \
+              '
+                any(
+                  .primary_network_interface.security_groups[]?;
+                  .name == $expected_sg
+                )
+              ' > /dev/null
+          then
+            echo "$vm_name: $IBM_SECURITY_GROUP attached"
+        
+            echo \
+              "| $vm_name | $IBM_SECURITY_GROUP | ✅ PASS |" \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::$IBM_SECURITY_GROUP is not attached to $vm_name"
+        
+            echo \
+              "| $vm_name | $IBM_SECURITY_GROUP | ❌ FAIL |" \
+              >> "$GITHUB_STEP_SUMMARY"
+        
+            association_failed=1
+          fi
+        done
+        
+        if (( association_failed != 0 )); then
+          exit 1
+        fi
           
           if echo "$sg_json" |
               jq -e '
