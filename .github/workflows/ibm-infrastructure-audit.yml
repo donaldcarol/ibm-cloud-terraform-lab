@@ -9,6 +9,7 @@ env:
   IC_API_KEY: ${{ secrets.IC_API_KEY }}
   IBM_REGION: eu-de
   IBM_RESOURCE_GROUP: rg-ibm-lab
+  IBM_ADMIN_CIDR: ${{ vars.IBM_ADMIN_CIDR }}
 
 jobs:
   ibm-infrastructure-audit:
