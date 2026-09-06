@@ -39,4 +39,5 @@ jobs:
         run: |
           set -euo pipefail
           echo "Performing infrastructure audit..."
-          ibmcloud is instances
+          ibmcloud is instances --output JSON |
+          jq -r '.[] | [.name, .status, .zone.name, .profile.name] | @tsv'
