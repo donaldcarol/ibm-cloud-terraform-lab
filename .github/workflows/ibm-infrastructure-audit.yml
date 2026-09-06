@@ -36,8 +36,25 @@ jobs:
 
       - name: Perform infrastructure audit
         shell: bash
-        run: |
-          set -euo pipefail
-          echo "Performing infrastructure audit..."
-          ibmcloud is instances --output JSON |
-          jq -r '.[] | [.name, .status, .zone.name, .profile.name] | @tsv'
+      run: |
+        set -euo pipefail
+
+        echo "Performing infrastructure audit..."
+
+        instances_json="$(
+        ibmcloud is instances --output JSON
+        )"
+
+        echo "$instances_json" |
+        jq -r '.[] | [.name, .status, .zone.name, .profile.name] | @tsv'
+
+        {
+        echo "## IBM Cloud Infrastructure Audit"
+        echo
+        echo "| VM name | Status | Zone | Profile |"
+        echo "|---|---|---|---|"
+
+        echo "$instances_json" |
+        jq -r '.[] |
+        "| \(.name) | \(.status) | \(.zone.name) | \(.profile.name) |"'
+        } >> "$GITHUB_STEP_SUMMARY"
