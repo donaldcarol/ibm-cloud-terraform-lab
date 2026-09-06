@@ -89,9 +89,15 @@ jobs:
           | [.name, .remote.cidr_block, .port_min, .port_max]
           | @tsv
           '
-          echo "Security group targets:"
-          echo "$sg_json" |
-              jq '.targets'
+          echo "Security groups attached to each VM:"
+
+          for vm_name in vm-ibm-lab-1 vm-ibm-lab-2; do
+          echo
+          echo "VM: $vm_name"
+        
+           ibmcloud is instance "$vm_name" --output JSON |
+            jq '.primary_network_interface.security_groups'
+            done
           
           if echo "$sg_json" |
               jq -e '
