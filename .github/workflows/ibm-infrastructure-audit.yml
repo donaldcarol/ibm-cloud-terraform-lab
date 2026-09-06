@@ -88,3 +88,42 @@ jobs:
           | [.name, .remote.cidr_block, .port_min, .port_max]
           | @tsv
           '
+          if echo "$sg_json" |
+              jq -e '
+                [
+                  .rules[]
+                  | select(
+                      .direction == "inbound"
+                      and .protocol == "tcp"
+                      and .port_min <= 22
+                      and .port_max >= 22
+                      and (
+                        .remote.cidr_block == "0.0.0.0/0"
+                        or .remote.cidr_block == "::/0"
+                      )
+                    )
+                ]
+                | length > 0
+              ' > /dev/null
+            then
+              echo "::error::SSH port 22 is exposed to the Internet"
+            
+              {
+                echo
+                echo "### SSH Security Check: ❌ FAIL"
+                echo
+                echo "Port 22 is accessible from \`0.0.0.0/0\` or \`::/0\`."
+              } >> "$GITHUB_STEP_SUMMARY"
+            
+              exit 1
+            else
+              echo "SSH Security Check: PASS"
+            
+              {
+                echo
+                echo "### SSH Security Check: ✅ PASS"
+                echo
+                echo "Port 22 is not exposed to the entire Internet."
+              } >> "$GITHUB_STEP_SUMMARY"
+            fi
+                      
