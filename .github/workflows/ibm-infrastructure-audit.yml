@@ -64,4 +64,12 @@ jobs:
           set -euo pipefail
           echo "Listing security groups..."
           ibmcloud is security-groups --vpc vpc-ibm-lab
+
+      - name: Inspect lab security group
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Inspecting sg-ibm-lab..."
+          ibmcloud is security-group sg-ibm-lab    
+          
       
