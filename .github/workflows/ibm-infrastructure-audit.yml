@@ -70,6 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Inspecting sg-ibm-lab..."
-          ibmcloud is security-group sg-ibm-lab    
+          ibmcloud is security-group sg-ibm-lab --output JSON |
+            jq '.rules'
           
       
