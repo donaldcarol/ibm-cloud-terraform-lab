@@ -71,6 +71,10 @@ jobs:
         run: |
           set -euo pipefail
 
+          echo "Security group targets:"
+          echo "$sg_json" |
+              jq '.targets'
+  
           echo "Inspecting SSH rules in sg-ibm-lab..."
 
           sg_json="$(
