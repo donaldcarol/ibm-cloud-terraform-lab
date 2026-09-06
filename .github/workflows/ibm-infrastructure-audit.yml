@@ -15,7 +15,7 @@ jobs:
     name: IBM Infrastructure Audit
     runs-on: ubuntu-latest
 
-steps:
+  steps:
       - name: Install IBM Cloud CLI
         shell: bash
         run: |
