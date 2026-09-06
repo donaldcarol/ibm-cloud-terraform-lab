@@ -57,3 +57,11 @@ jobs:
           echo "$instances_json" |
           jq -r '.[] | "| \(.name) | \(.status) | \(.zone.name) | \(.profile.name) |"'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: List security groups
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Listing security groups..."
+          ibmcloud is security-groups --vpc vpc-ibm-lab
+      
