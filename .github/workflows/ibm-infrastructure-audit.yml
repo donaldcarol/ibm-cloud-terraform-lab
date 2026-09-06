@@ -15,7 +15,7 @@ jobs:
     name: IBM Infrastructure Audit
     runs-on: ubuntu-latest
 
-  steps:
+    steps:
       - name: Install IBM Cloud CLI
         shell: bash
         run: |
@@ -36,25 +36,24 @@ jobs:
 
       - name: Perform infrastructure audit
         shell: bash
-      run: |
-        set -euo pipefail
+        run: |
+          set -euo pipefail
 
-        echo "Performing infrastructure audit..."
+          echo "Performing infrastructure audit..."
 
-        instances_json="$(
-        ibmcloud is instances --output JSON
-        )"
+          instances_json="$(
+          ibmcloud is instances --output JSON
+          )"
 
-        echo "$instances_json" |
-        jq -r '.[] | [.name, .status, .zone.name, .profile.name] | @tsv'
+          echo "$instances_json" |
+          jq -r '.[] | [.name, .status, .zone.name, .profile.name] | @tsv'
 
-        {
-        echo "## IBM Cloud Infrastructure Audit"
-        echo
-        echo "| VM name | Status | Zone | Profile |"
-        echo "|---|---|---|---|"
+          {
+          echo "## IBM Cloud Infrastructure Audit"
+          echo
+          echo "| VM name | Status | Zone | Profile |"
+          echo "|---|---|---|---|"
 
-        echo "$instances_json" |
-        jq -r '.[] |
-        "| \(.name) | \(.status) | \(.zone.name) | \(.profile.name) |"'
-        } >> "$GITHUB_STEP_SUMMARY"
+          echo "$instances_json" |
+          jq -r '.[] | "| \(.name) | \(.status) | \(.zone.name) | \(.profile.name) |"'
+          } >> "$GITHUB_STEP_SUMMARY"
