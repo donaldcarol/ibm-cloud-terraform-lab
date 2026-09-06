@@ -127,4 +127,47 @@ jobs:
                 echo "Port 22 is not exposed to the entire Internet."
               } >> "$GITHUB_STEP_SUMMARY"
             fi
+
+            if [[ -z "$IBM_ADMIN_CIDR" ]]; then
+              echo "::error::GitHub variable IBM_ADMIN_CIDR is empty"
+              exit 1
+            fi
+            
+            if echo "$sg_json" |
+              jq -e \
+                --arg expected_cidr "$IBM_ADMIN_CIDR" \
+                '
+                  [
+                    .rules[]
+                    | select(
+                        .direction == "inbound"
+                        and .protocol == "tcp"
+                        and .port_min <= 22
+                        and .port_max >= 22
+                        and .remote.cidr_block == $expected_cidr
+                      )
+                  ]
+                  | length > 0
+                ' > /dev/null
+            then
+              echo "Expected admin SSH rule found: $IBM_ADMIN_CIDR"
+            
+              {
+                echo
+                echo "### Admin SSH Rule: ✅ PASS"
+                echo
+                echo "Expected administrative CIDR found: \`$IBM_ADMIN_CIDR\`"
+              } >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::Expected SSH rule not found for $IBM_ADMIN_CIDR"
+            
+              {
+                echo
+                echo "### Admin SSH Rule: ❌ FAIL"
+                echo
+                echo "Expected administrative CIDR not found: \`$IBM_ADMIN_CIDR\`"
+              } >> "$GITHUB_STEP_SUMMARY"
+            
+              exit 1
+            fi
                       
